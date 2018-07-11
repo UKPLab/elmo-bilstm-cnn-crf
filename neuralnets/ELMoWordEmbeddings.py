@@ -100,6 +100,10 @@ class ELMoWordEmbeddings(EmbeddingLookup):
         while len(self.lazyCacheFiles) > 0:
             inputPath = self.lazyCacheFiles.pop()
 
+            if not os.path.isfile(inputPath):
+                print("ELMo cache file not found:", inputPath)
+                continue
+
             f = open(inputPath, 'rb')
             loaded_cache = pkl.load(f)
             f.close()
