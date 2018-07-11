@@ -62,8 +62,7 @@ def addEmbeddings(sentences, embeddingsFct, padOneTokenSentence=True):
 
         sentCnt += 1
         percent = 100.0 * sentCnt / total_size
-        line = '[{0}{1}]'.format(
-            '=' * int(percent / 2), ' ' * (50 - int(percent / 2)))
+        line = '[{0}{1}]'.format('=' * int(percent / 2), ' ' * (50 - int(percent / 2)))
         status = '\r{0:3.0f}%{1} {2:3d}/{3:3d} sentences'
         sys.stdout.write(status.format(percent, line, sentCnt, total_size))
 
