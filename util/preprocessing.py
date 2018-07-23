@@ -49,22 +49,20 @@ def perpareDataset(datasets, embeddingsClass, padOneTokenSentence=True):
     return outputPath
 
 def addEmbeddings(sentences, embeddingsFct, padOneTokenSentence=True):
-    print("\n\n:: Lookup embeddings and tokens ::")
+    logging.info("\n\n:: Lookup embeddings and tokens (this might take a while) ::")
     sentCnt = 0
     total_size = len(sentences)
 
-    for sentence in sentences:
-        sentence['word_embeddings'] = embeddingsFct(sentence['tokens'])
+    # Add embeddings
+    word_embeddings = embeddingsFct(sentences)
 
-        if padOneTokenSentence and len(sentence['word_embeddings'])==1:
-            sentence['word_embeddings'] = np.append(sentence['word_embeddings'],
-                                                    np.zeros((1, len(sentence['word_embeddings'][0]))), axis=0)
 
-        sentCnt += 1
-        percent = 100.0 * sentCnt / total_size
-        line = '[{0}{1}]'.format('=' * int(percent / 2), ' ' * (50 - int(percent / 2)))
-        status = '\r{0:3.0f}%{1} {2:3d}/{3:3d} sentences'
-        sys.stdout.write(status.format(percent, line, sentCnt, total_size))
+    for sentenceIdx in range(len(sentences)):
+        sentence = sentences[sentenceIdx]
+        sentence['word_embeddings'] = word_embeddings[sentenceIdx]
+        # Pad one token sentence
+        if padOneTokenSentence and len(sentence['word_embeddings']) == 1:
+            sentence['word_embeddings'] = np.append(sentence['word_embeddings'], np.zeros((1, len(sentence['word_embeddings'][0]))), axis=0)
 
 
 def loadDatasetPickle(embeddingsPickle):

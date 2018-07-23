@@ -3,6 +3,7 @@ from util.CoNLL import readCoNLL
 import os
 import sys
 import logging
+import time
 
 if len(sys.argv) < 3:
     print("Usage: python Create_ELMo_Cache.py datasetName tokenColumnId [cuda_device]")
@@ -27,7 +28,6 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-
 commentSymbol = None
 columns = {tokenColId: 'tokens'}
 
@@ -36,38 +36,27 @@ columns = {tokenColId: 'tokens'}
 picklePath = "embeddings/elmo_cache_" + datasetName + ".pkl"
 
 embLookup = ELMoWordEmbeddings(None, elmo_options_file, elmo_weight_file, elmo_cuda_device=cudaDevice)
-if os.path.isfile(picklePath):
-    embLookup.loadCache(picklePath)
 
 print("ELMo Cache Generation")
 print("Output file:", picklePath)
 print("CUDA Device:", cudaDevice)
 
 splitFiles = ['train.txt', 'dev.txt', 'test.txt']
+
 for splitFile in splitFiles:
     inputPath = os.path.join('data', datasetName, splitFile)
 
     print("Adding file to cache: "+inputPath)
     sentences = readCoNLL(inputPath, columns, commentSymbol)
+    tokens = [sentence['tokens'] for sentence in sentences]
 
-    totalSentences = len(sentences)
-    sentCnt = 0
-    for sentence in sentences:
-        embLookup.addToCache(sentence['tokens'])
-        sentCnt += 1
-        current = sentCnt
-        percent = 100.0 * current / totalSentences
-        line = '[{0}{1}]'.format(
-            '=' * int(percent / 2), ' ' * (50 - int(percent / 2)))
-        status = '\r{0:3.0f}%{1} {2:3d}/{3:3d} Sentences'
-        sys.stdout.write(status.format(percent, line, current, totalSentences))
-
-    print("\n\n---\n")
-
-
+    start_time = time.time()
+    embLookup.addToCache(tokens)
+    end_time = time.time()
+    print("%s processed in %.1f seconds" % (splitFile, end_time - start_time))
+    print("\n---\n")
 
 print("Store file at:", picklePath)
 embLookup.storeCache(picklePath)
-
 
 
