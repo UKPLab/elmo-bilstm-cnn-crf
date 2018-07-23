@@ -18,6 +18,8 @@ The system is **easy to use**, optimized for **high performance**, and highly **
 
 
 # Documentation
+For an IPython Notebook with a simple example how to use ELMo representations for sentence classification, see: [Keras_ELMo_Tutorial.ipynb](Keras_ELMo_Tutorial.ipynb).
+
 This code is an extension of the [emnlp2017-bilstm-cnn-crf](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/) implementation. Must examples can be used with only slight adaptation. Also please see that repository for an explanation about the definition of the datasets, the configuration of the hyperparameters, how to use it for multi-task learning, or how to create custom features.
 
 Most aspects from [emnlp2017-bilstm-cnn-crf](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/) work the same in this implementation.
