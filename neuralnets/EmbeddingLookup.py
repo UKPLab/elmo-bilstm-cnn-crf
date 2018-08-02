@@ -52,7 +52,9 @@ class EmbeddingLookup(ABC):
                 embeddings.append(vector)
 
                 word2Idx["UNKNOWN_TOKEN"] = len(word2Idx)
-                vector = np.random.uniform(-0.25, 0.25, embeddingsDimension)  # Alternativ -sqrt(3/dim) ... sqrt(3/dim)
+                rndState = np.random.RandomState(seed=12345) # Fixed rnd seed for unknown token, so that it is always the same
+                vector = rndState.uniform(-0.25, 0.25, embeddingsDimension)  # Alternativ -sqrt(3/dim) ... sqrt(3/dim)
+
                 embeddings.append(vector)
 
             vector = np.array([float(num) for num in split[1:]])
