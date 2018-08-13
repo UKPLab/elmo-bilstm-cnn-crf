@@ -22,12 +22,13 @@ import random
 import logging
 
 from .keraslayers.ChainCRF import ChainCRF
-
+from .keraslayers.WeightedAverage import WeightedAverage
+from .ELMoWordEmbeddings import ELMoWordEmbeddings
 
 
 
 class ELMoBiLSTM:
-    def __init__(self, params=None):
+    def __init__(self, embeddingsLookup, params=None):
         # modelSavePath = Path for storing models, resultsSavePath = Path for storing output labels while training
         self.models = None
         self.modelSavePath = None
@@ -40,10 +41,21 @@ class ELMoBiLSTM:
                          'charEmbeddings': None, 'charEmbeddingsSize': 30, 'charFilterSize': 30, 'charFilterLength': 3, 'charLSTMSize': 25, 'maxCharLength': 25,
                          'useTaskIdentifier': False, 'clipvalue': 0, 'clipnorm': 1,
                          'earlyStopping': 5, 'miniBatchSize': 32,
-                         'featureNames': ['word_embeddings', 'casing'], 'addFeatureDimensions': 10}
+                         'featureNames': ['casing'], 'addFeatureDimensions': 10}
         if params != None:
             defaultParams.update(params)
+
         self.params = defaultParams
+
+        self.embeddingsLookup = embeddingsLookup
+        embConfig = self.embeddingsLookup.getConfig()
+        self.params['embeddingsConfig'] = embConfig
+
+        if embConfig['embeddings_path'] is not None and 'tokens_embeddings' not in self.params['featureNames']:
+            self.params['featureNames'].append('tokens_embeddings')
+
+        if embConfig['elmo_mode'] is not None and 'elmo_embeddings' not in self.params['featureNames']:
+             self.params['featureNames'].append('elmo_embeddings')
 
 
 
@@ -79,7 +91,7 @@ class ELMoBiLSTM:
             logging.info("%d dev sentences" % len(self.data[modelName]['devMatrix']))
             logging.info("%d test sentences" % len(self.data[modelName]['testMatrix']))
 
-            self.embeddingsSize = len(self.data[modelName]['trainMatrix'][0]['word_embeddings'][0])
+
 
         
         if len(self.evaluateModelNames) == 1:
@@ -101,22 +113,37 @@ class ELMoBiLSTM:
         
     def buildModel(self):
         self.models = {}
+        inputNodes = []
+        mergeInputLayers = []
 
-        tokens_input = Input(shape=(None,self.embeddingsSize), dtype='float32', name='words_input')
-
-        inputNodes = [tokens_input]
-        mergeInputLayers = [tokens_input]
-
-
+        #Embedding features
         for featureName in self.params['featureNames']:
-            if featureName == 'tokens' or featureName == 'characters' or featureName == 'word_embeddings':
-                continue
+            if featureName.endswith('_embeddings'):
+                sampleEmbedding = np.array(self.data[self.modelNames[0]]['trainMatrix'][0][featureName][0])
 
-            feature_input = Input(shape=(None,), dtype='int32', name=featureName+'_input')
-            feature_embedding = Embedding(input_dim=len(self.mappings[featureName]), output_dim=self.params['addFeatureDimensions'], name=featureName+'_emebddings')(feature_input)
+                if len(sampleEmbedding.shape)==1:
+                    tokens_input = Input(shape=(None, sampleEmbedding.shape[0]), dtype='float32',
+                                         name=featureName + '_input')
+                    inputNodes.append(tokens_input)
+                    mergeInputLayers.append(tokens_input)
+                elif len(sampleEmbedding.shape)==2:
+                    elmo_input = Input(shape=(None, sampleEmbedding.shape[0], sampleEmbedding.shape[1]),
+                                       dtype='float32',
+                                       name=featureName + '_input')
+                    elmo_output = TimeDistributed(WeightedAverage(), name=featureName + '_weighted_average')(
+                        elmo_input)
 
-            inputNodes.append(feature_input)
-            mergeInputLayers.append(feature_embedding)
+                    inputNodes.append(elmo_input)
+                    mergeInputLayers.append(elmo_output)
+                else:
+                    print("Unknown embedding dimensions" + str(sampleEmbedding.shape))
+                    assert (False)
+            else:
+                feature_input = Input(shape=(None,), dtype='int32', name=featureName+'_input')
+                feature_embedding = Embedding(input_dim=len(self.mappings[featureName]), output_dim=self.params['addFeatureDimensions'], name=featureName+'_emebddings')(feature_input)
+
+                inputNodes.append(feature_input)
+                mergeInputLayers.append(feature_embedding)
         
 
         # :: Character Embeddings ::
@@ -246,7 +273,8 @@ class ELMoBiLSTM:
             elif self.params['optimizer'].lower() == 'sgd':
                 opt = SGD(lr=0.1, **optimizerParams)
             
-            
+
+
             model = Model(inputs=inputNodes, outputs=[output])
             model.compile(loss=lossFct, optimizer=opt)
             
@@ -420,7 +448,7 @@ class ELMoBiLSTM:
                     self.resultsSavePath.write("\n")
                     self.resultsSavePath.flush()
                 
-                logging.info("\nScores from epoch with best dev-scores:\n  Dev-Score: %.4f\n  Test-Score %.4f" % (max_dev_score[modelName], max_test_score[modelName]))
+                logging.info("\nScores from epoch with best dev-scores:\n  Dev-Score: %.4f\n  Test-Score: %.4f" % (max_dev_score[modelName], max_test_score[modelName]))
                 logging.info("")
                 
             logging.info("%.2f sec for evaluation" % (time.time() - start_time))
@@ -516,7 +544,7 @@ class ELMoBiLSTM:
         idx2Label = self.idx2Labels[modelName]
         
         correctLabels = [sentences[idx][labelKey] for idx in range(len(sentences))]
-        predLabels = self.predictLabels(model, sentences) 
+        predLabels = self.predictLabels(model, sentences)
 
         labelKey = self.labelKeys[modelName]
         encodingScheme = labelKey[labelKey.index('_')+1:]
@@ -611,7 +639,9 @@ class ELMoBiLSTM:
         import json
         from .keraslayers.ChainCRF import create_custom_objects
 
-        model = keras.models.load_model(modelPath, custom_objects=create_custom_objects())
+        custom_layers = create_custom_objects()
+        custom_layers['WeightedAverage'] = WeightedAverage
+        model = keras.models.load_model(modelPath, custom_objects=custom_layers)
 
         with h5py.File(modelPath, 'r') as f:
             mappings = json.loads(f.attrs['mappings'])
@@ -619,7 +649,17 @@ class ELMoBiLSTM:
             modelName = f.attrs['modelName']
             labelKey = f.attrs['labelKey']
 
-        bilstm = ELMoBiLSTM(params)
+        # :: Read the config values for the embedding lookup function ::
+        embeddings_path = params['embeddingsConfig']['embeddings_path']
+        elmo_options_file = params['embeddingsConfig']['elmo_options_file']
+        elmo_weight_file = params['embeddingsConfig']['elmo_weight_file']
+        elmo_mode = params['embeddingsConfig']['elmo_mode']
+        elmo_cuda_device = -1  # Which GPU to use. -1 for CPU
+
+        embLookup = ELMoWordEmbeddings(embeddings_path, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
+
+        # :: Create new model object ::
+        bilstm = ELMoBiLSTM(embLookup, params)
         bilstm.setMappings(mappings)
         bilstm.models = {modelName: model}
         bilstm.labelKeys = {modelName: labelKey}

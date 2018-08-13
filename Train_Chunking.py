@@ -44,11 +44,10 @@ datasets = {
 
 
 # :: Prepares the dataset to be used with the LSTM-network. Creates and stores cPickle files in the pkl/ folder ::
-
 embeddings_file = 'embeddings/komninos_english_embeddings.gz'
 elmo_options_file= 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway_5.5B/elmo_2x4096_512_2048cnn_2xhighway_5.5B_options.json'
 elmo_weight_file = 'https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway_5.5B/elmo_2x4096_512_2048cnn_2xhighway_5.5B_weights.hdf5'
-elmo_mode = 'average'
+elmo_mode = 'weighted_average'
 elmo_cuda_device = -1 #Which GPU to use. -1 for CPU
 
 embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
@@ -67,11 +66,10 @@ pickleFile = perpareDataset(datasets, embLookup)
 #Load the embeddings and the dataset
 mappings, data = loadDatasetPickle(pickleFile)
 
-
 # Some network hyperparameters
 params = {'classifier': ['CRF'], 'LSTM-Size': [100,100], 'dropout': (0.5, 0.5)}
 
-model = ELMoBiLSTM(params)
+model = ELMoBiLSTM(embLookup, params)
 model.setMappings(mappings)
 model.setDataset(datasets, data)
 model.modelSavePath = "models/[ModelName]_[DevScore]_[TestScore]_[Epoch].h5"

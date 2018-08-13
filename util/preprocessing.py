@@ -50,19 +50,23 @@ def perpareDataset(datasets, embeddingsClass, padOneTokenSentence=True):
 
 def addEmbeddings(sentences, embeddingsFct, padOneTokenSentence=True):
     logging.info("\n\n:: Lookup embeddings and tokens (this might take a while) ::")
-    sentCnt = 0
-    total_size = len(sentences)
 
     # Add embeddings
     word_embeddings = embeddingsFct(sentences)
 
+    for embeddingName in word_embeddings.keys():
+        embeddings = word_embeddings[embeddingName]
 
-    for sentenceIdx in range(len(sentences)):
-        sentence = sentences[sentenceIdx]
-        sentence['word_embeddings'] = word_embeddings[sentenceIdx]
-        # Pad one token sentence
-        if padOneTokenSentence and len(sentence['word_embeddings']) == 1:
-            sentence['word_embeddings'] = np.append(sentence['word_embeddings'], np.zeros((1, len(sentence['word_embeddings'][0]))), axis=0)
+        for sentenceIdx in range(len(sentences)):
+            sentence = sentences[sentenceIdx]
+            sentence[embeddingName+'_embeddings'] = embeddings[sentenceIdx]
+
+            # Pad one token sentence
+            if padOneTokenSentence and len(sentence[embeddingName+'_embeddings']) == 1:
+                zeros = np.zeros(sentence[embeddingName+'_embeddings'].shape)
+                sentence[embeddingName + '_embeddings'] = np.append(sentence[embeddingName+'_embeddings'], zeros, axis=0)
+
+
 
 
 def loadDatasetPickle(embeddingsPickle):
