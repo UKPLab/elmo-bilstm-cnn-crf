@@ -79,7 +79,7 @@ class ELMoWordEmbeddings:
         elif self.elmo_mode == 'weighted_average':
             return np.swapaxes(elmo_vectors,0,1)
         elif self.elmo_mode == 'last':
-            return np.asarray[-1, :, :]
+            return elmo_vectors[-1, :, :]
         elif isinstance(self.elmo_mode, int):
             return elmo_vectors[int(self.elmo_mode), :, :]
         else:
