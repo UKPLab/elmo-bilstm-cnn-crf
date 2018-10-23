@@ -92,6 +92,14 @@ pip install -r docker/requirements.txt
 
 The [docker-folder](docker/) contains an example how to create a Docker image that contains all required dependencies. It can be used to run your code within that container. See the docker-folder for more details.
 
+### Test the installation
+If the installation was successful, you can test the code by running:
+```bash
+python Train_Chunking.py
+```
+
+This trains the ELMo-BiLSTM-CRF architecture on the CoNLL 2000 chunking dataset.
+
 # Training
 See `Train_Chunking.py` for an example how to train and evaluate this implementation. The code assumes a CoNLL formatted dataset like the CoNLL 2000 dataset for chunking.
 
