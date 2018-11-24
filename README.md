@@ -119,7 +119,7 @@ For more details, see the [emnlp2017-bilstm-cnn-crf implementation](https://gith
 # Computing ELMo representations
 The computation of ELMo representations is computationally expensive. A CNN is used to map the characters of a token to a dense vectors. These dense vectors are then fed through two BiLSTMs. The representation of each token and the two outputs of the BiLSTMs are used to form the final context-dependend word embedding.
 
-In order speed-up the training, we pre-compute the context dependend word embeddings for all sentences in our training, development, and test set. Hence, instead of passing word indizes to the BiLSTM-CRF architecture, we pass the final 1024 dimensional embeddings to the architecture.
+In order speed-up the training, we pre-compute the context dependend word embeddings for all sentences in our training, development, and test set. Hence, instead of passing word indices to the BiLSTM-CRF architecture, we pass the final 1024 dimensional embeddings to the architecture.
 
 The relevant code looks like:
 ```
@@ -127,7 +127,7 @@ embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_f
 pickleFile = perpareDataset(datasets, embLookup)
 ```
 
-The `ELMoWordEmbeddings` provides methods for the efficient compuation of ELMo representations. It has the following parameters:
+The `ELMoWordEmbeddings` provides methods for the efficient computation of ELMo representations. It has the following parameters:
 * `embeddings_file`: The ELMo paper concatenates traditional word embeddings, like GloVe, with the context dependent embeddings. With `embeddings_file` you can pass a path to a pre-trained word embeddings file. You can set it to `none` if you don't want to use traditional word embeddings.
 * `elmo_options_file` and `elmo_weight_file`: AllenNLP provides different pretrained ELMo models.
 * `elmo_mode`: Set to `average` if you want all 3 layers to be averaged. Set to `last` if you want to use only the final layer of the ELMo language model.
