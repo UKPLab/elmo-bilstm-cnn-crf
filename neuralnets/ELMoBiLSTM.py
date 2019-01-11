@@ -20,6 +20,7 @@ import time
 import os
 import random
 import logging
+from tqdm import tqdm
 
 from .keraslayers.ChainCRF import ChainCRF
 from .keraslayers.WeightedAverage import WeightedAverage
@@ -29,6 +30,7 @@ from .ELMoWordEmbeddings import ELMoWordEmbeddings
 
 class ELMoBiLSTM:
     def __init__(self, embeddingsLookup, params=None):
+        self.trainRangeLength = None
         # modelSavePath = Path for storing models, resultsSavePath = Path for storing output labels while training
         self.models = None
         self.modelSavePath = None
@@ -115,11 +117,16 @@ class ELMoBiLSTM:
         self.models = {}
         inputNodes = []
         mergeInputLayers = []
-
+        outputEmbeddingFct = None
         #Embedding features
         for featureName in self.params['featureNames']:
             if featureName.endswith('_embeddings'):
-                sampleEmbedding = np.array(self.data[self.modelNames[0]]['trainMatrix'][0][featureName][0])
+                #sampleEmbedding = np.array(self.data[self.modelNames[0]]['trainMatrix'][0][featureName][0])
+                if outputEmbeddingFct is None: #Compute a sample embedding to get the dimension
+                    outputEmbeddingFct = self.embeddingsLookup.sentenceLookup([{'tokens': ['test']}])
+
+                sampleEmbedding = np.asarray(outputEmbeddingFct[featureName.rsplit('_', 1)[0]][0][0])
+
 
                 if len(sampleEmbedding.shape)==1:
                     tokens_input = Input(shape=(None, sampleEmbedding.shape[0]), dtype='float32',
@@ -292,21 +299,17 @@ class ELMoBiLSTM:
         if self.params['optimizer'] in self.learning_rate_updates and self.epoch in self.learning_rate_updates[self.params['optimizer']]:       
             logging.info("Update Learning Rate to %f" % (self.learning_rate_updates[self.params['optimizer']][self.epoch]))
             for modelName in self.modelNames:            
-                K.set_value(self.models[modelName].optimizer.lr, self.learning_rate_updates[self.params['optimizer']][self.epoch]) 
-                
-            
-        for batch in self.minibatch_iterate_dataset():
+                K.set_value(self.models[modelName].optimizer.lr, self.learning_rate_updates[self.params['optimizer']][self.epoch])
+
+        for batch in tqdm(self.minibatch_iterate_dataset(), total=self.trainRangeLength, desc="Training", unit=' Batch'):
             for modelName in self.modelNames:         
                 nnLabels = batch[modelName][0]
                 nnInput = batch[modelName][1:]
-                self.models[modelName].train_on_batch(nnInput, nnLabels)  
-                
-                               
-            
-          
+                self.models[modelName].train_on_batch(nnInput, nnLabels)
+
 
     def minibatch_iterate_dataset(self, modelNames = None):
-        """ Create based on sentence length mini-batches with approx. the same size. Sentences and 
+        """ Create batches based on sentence length with the same size. Sentences and
         mini-batch chunks are shuffled and used to the train the model """
         
         if self.trainSentenceLengthRanges == None:
@@ -369,27 +372,22 @@ class ELMoBiLSTM:
         
         #Iterate over the mini batch ranges
         if self.mainModelName != None:
-            rangeLength = len(self.trainMiniBatchRanges[self.mainModelName])
+            self.trainRangeLength = len(self.trainMiniBatchRanges[self.mainModelName])
         else:
-            rangeLength = min([len(self.trainMiniBatchRanges[modelName]) for modelName in modelNames])
+            self.trainRangeLength = min([len(self.trainMiniBatchRanges[modelName]) for modelName in modelNames])
 
         
-        batches = {}
-        for idx in range(rangeLength):
-            batches.clear()
+
+        for idx in range(self.trainRangeLength):
+            batches = {}
             
             for modelName in modelNames:   
                 trainMatrix = self.data[modelName]['trainMatrix']
                 dataRange = self.trainMiniBatchRanges[modelName][idx % len(self.trainMiniBatchRanges[modelName])] 
                 labels = np.asarray([trainMatrix[idx][self.labelKeys[modelName]] for idx in range(dataRange[0], dataRange[1])])
                 labels = np.expand_dims(labels, -1)
-                
-                
                 batches[modelName] = [labels]
-                
-                for featureName in self.params['featureNames']:
-                    inputData = np.asarray([trainMatrix[idx][featureName] for idx in range(dataRange[0], dataRange[1])])
-                    batches[modelName].append(inputData)
+                batches[modelName].extend(self.getInputData(trainMatrix, range(dataRange[0], dataRange[1])))
             
             yield batches   
             
@@ -496,11 +494,7 @@ class ELMoBiLSTM:
         sentenceLengths = self.getSentenceLengths(sentences)
         
         for indices in sentenceLengths.values():   
-            nnInput = []                  
-            for featureName in self.params['featureNames']:
-                inputData = np.asarray([sentences[idx][featureName] for idx in indices])
-                nnInput.append(inputData)
-            
+            nnInput = self.getInputData(sentences, indices)
             predictions = model.predict(nnInput, verbose=False)
             predictions = predictions.argmax(axis=-1) #Predict classes            
            
@@ -511,6 +505,22 @@ class ELMoBiLSTM:
                 predIdx += 1   
         
         return predLabels
+
+    def getInputData(self, sentences, indices):
+        nnInput = []
+        for featureName in self.params['featureNames']:
+            if featureName.endswith('_embeddings'):
+                pureFeatureName = featureName.rsplit('_', 1)[0]
+                batch_sentences = [sentences[idx] for idx in indices]
+                inputData = np.asarray(self.embeddingsLookup.batchLookup(batch_sentences, pureFeatureName))
+
+                if inputData.shape[1]==1:  # One token sentence need to be padded for CRF
+                    zeros = np.zeros(inputData.shape)
+                    inputData = np.append(inputData, zeros, axis=1)
+            else:
+                inputData = np.asarray([sentences[idx][featureName] for idx in indices])
+            nnInput.append(inputData)
+        return nnInput
     
    
     def computeScore(self, modelName, devMatrix, testMatrix):

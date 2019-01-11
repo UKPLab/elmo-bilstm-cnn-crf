@@ -22,6 +22,8 @@ class ELMoWordEmbeddings:
 
         self.elmo_mode = elmo_mode
         self.elmo = None
+
+        self.cache_computed_elmo_embeddings = False
         self.cache = {}
         self.lazyCacheFiles = []
 
@@ -73,6 +75,32 @@ class ELMoWordEmbeddings:
 
         return out_vectors
 
+    def batchLookup(self, sentences, feature_name):
+        if feature_name == 'tokens':
+            if self.word2Idx is None or self.embeddings is None:
+                self.word2Idx, self.embeddings = self.readEmbeddings(self.embeddings_path)
+
+            tokens_vectors = []
+            for sentence in sentences:
+                per_token_embedding = []
+                for token in sentence['tokens']:
+                    vecId = self.word2Idx['UNKNOWN_TOKEN']
+
+                    if token in self.word2Idx:
+                        vecId = self.word2Idx[token]
+                    elif token.lower() in self.word2Idx:
+                        vecId = self.word2Idx[token.lower()]
+                    per_token_embedding.append(self.embeddings[vecId])
+                per_token_embedding = np.asarray(per_token_embedding)
+                tokens_vectors.append(per_token_embedding)
+
+            return np.asarray(tokens_vectors)
+        elif feature_name == 'elmo':
+            return np.asarray(self.getElmoEmbedding(sentences))
+        else:
+            print("Unknown feature name was passed to singleSentenceLookup")
+            assert(False)
+
     def applyElmoMode(self, elmo_vectors):
         if self.elmo_mode == 'average':
             return np.average(elmo_vectors, axis=0).astype(np.float32)
@@ -114,6 +142,12 @@ class ELMoWordEmbeddings:
             for elmo_vectors in self.elmo.embed_sentences(non_cached_sentences):
                 assert(elmo_embeddings[non_cached_sentences_indices[idx]] == None)
                 elmo_embeddings[non_cached_sentences_indices[idx]] = self.applyElmoMode(elmo_vectors)
+
+                if self.cache_computed_elmo_embeddings:
+                    tokens = non_cached_sentences[idx]
+                    cache_key = tuple(tokens)
+                    self.cache[cache_key] = elmo_vectors
+
                 idx += 1
 
         return elmo_embeddings
@@ -139,8 +173,8 @@ class ELMoWordEmbeddings:
 
         idx = 0
         for elmoEmbedding in self.elmo.embed_sentences(sentences):
-            sentence = tuple(sentences[idx])
-            self.cache[sentence] = elmoEmbedding
+            cache_key = tuple(sentences[idx])
+            self.cache[cache_key] = elmoEmbedding
 
             idx += 1
 

@@ -5,9 +5,9 @@
 # For pretrained models see docs/Pretrained_Models.md
 import nltk
 import sys
-from util.preprocessing import addCharInformation, createMatrices, addCasingInformation, addEmbeddings
+from util.preprocessing import addCharInformation, createMatrices, addCasingInformation
 from neuralnets.ELMoBiLSTM import ELMoBiLSTM
-from neuralnets.ELMoWordEmbeddings import ELMoWordEmbeddings
+
 
 if len(sys.argv) < 3:
     print("Usage: python RunModel.py modelPath inputPath")
@@ -37,10 +37,6 @@ addCasingInformation(sentences)
 
 # :: Map casing and character information to integer indices ::
 dataMatrix = createMatrices(sentences, lstmModel.mappings, True)
-
-# :: Perform the word embedding / ELMo embedding lookup ::
-addEmbeddings(dataMatrix, embLookup.sentenceLookup)
-
 
 # :: Use the model to tag the input ::
 tags = lstmModel.tagSentences(dataMatrix)

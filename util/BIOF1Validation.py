@@ -185,7 +185,7 @@ def checkBIOEncoding(predictions, correctBIOErrors):
     
     if errors > 0:
         labels += errors
-        logging.info("Wrong BIO-Encoding %d/%d labels, %.2f%%" % (errors, labels, errors/float(labels)*100),)
+        logging.info("Wrong BIO-Encoding %d/%d labels when setting incorrect labels to %s: %.2f%%" % (errors, labels, correctBIOErrors, errors/float(labels)*100),)
 
 
 def testEncodings():

@@ -5,9 +5,9 @@
 # For pretrained models see docs/
 import nltk
 import sys
-from util.preprocessing import addCharInformation, createMatrices, addCasingInformation, addEmbeddings, readCoNLL
+from util.preprocessing import addCharInformation, createMatrices, addCasingInformation, readCoNLL
 from neuralnets.ELMoBiLSTM import ELMoBiLSTM
-from neuralnets.ELMoWordEmbeddings import ELMoWordEmbeddings
+
 
 
 if len(sys.argv) < 3:
@@ -34,12 +34,10 @@ dataMatrix = createMatrices(sentences, lstmModel.mappings, True)
 # :: Perform the word embedding / ELMo embedding lookup ::
 embLookup = lstmModel.embeddingsLookup
 embLookup.elmo_cuda_device = -1         #Cuda device for pytorch - elmo embedding, -1 for CPU
-addEmbeddings(dataMatrix, embLookup.sentenceLookup)
 
 
 # :: Tag the input ::
 tags = lstmModel.tagSentences(dataMatrix)
-
 
 
 # :: Output to stdout ::

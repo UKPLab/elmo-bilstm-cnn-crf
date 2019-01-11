@@ -9,10 +9,8 @@ import sys
 import pickle as pkl
 
 
-def perpareDataset(datasets, embeddingsClass, padOneTokenSentence=True):
-    embeddingsName = embeddingsClass.getIdentifier()
-    embeddingsFct = embeddingsClass.sentenceLookup
-    pklName = "_".join(sorted(datasets.keys()) + [embeddingsName])
+def perpareDataset(datasets, padOneTokenSentence=True):
+    pklName = "_".join(sorted(datasets.keys()))
     outputPath = 'pkl/' + pklName + '.pkl'
 
     if os.path.isfile(outputPath):
@@ -36,9 +34,6 @@ def perpareDataset(datasets, embeddingsClass, padOneTokenSentence=True):
         logging.info("\n:: Transform "+datasetName+" dataset ::")
         pklObjects['data'][datasetName] = createPklFiles(paths, mappings, datasetColumns, commentSymbol, padOneTokenSentence)
 
-        for datasplit in pklObjects['data'][datasetName]:
-            addEmbeddings(pklObjects['data'][datasetName][datasplit], embeddingsFct, padOneTokenSentence)
-
 
     f = open(outputPath, 'wb')
     pkl.dump(pklObjects, f, -1)
@@ -47,27 +42,6 @@ def perpareDataset(datasets, embeddingsClass, padOneTokenSentence=True):
     logging.info("\n\nDONE - Embeddings file saved: %s" % outputPath)
     
     return outputPath
-
-def addEmbeddings(sentences, embeddingsFct, padOneTokenSentence=True):
-    logging.info("\n\n:: Lookup embeddings and tokens (this might take a while) ::")
-
-    # Add embeddings
-    word_embeddings = embeddingsFct(sentences)
-
-    for embeddingName in word_embeddings.keys():
-        embeddings = word_embeddings[embeddingName]
-
-        for sentenceIdx in range(len(sentences)):
-            sentence = sentences[sentenceIdx]
-            sentence[embeddingName+'_embeddings'] = embeddings[sentenceIdx]
-
-            # Pad one token sentence
-            if padOneTokenSentence and len(sentence[embeddingName+'_embeddings']) == 1:
-                zeros = np.zeros(sentence[embeddingName+'_embeddings'].shape)
-                sentence[embeddingName + '_embeddings'] = np.append(sentence[embeddingName+'_embeddings'], zeros, axis=0)
-
-
-
 
 def loadDatasetPickle(embeddingsPickle):
     """ Loads the cPickle file, that contains the word embeddings and the datasets """

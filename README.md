@@ -116,27 +116,39 @@ datasets = {
 
 For more details, see the [emnlp2017-bilstm-cnn-crf implementation](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/).
 
-# Computing ELMo representations
-The computation of ELMo representations is computationally expensive. A CNN is used to map the characters of a token to a dense vectors. These dense vectors are then fed through two BiLSTMs. The representation of each token and the two outputs of the BiLSTMs are used to form the final context-dependend word embedding.
+# ELMo Word Representations Computation
 
-In order speed-up the training, we pre-compute the context dependend word embeddings for all sentences in our training, development, and test set. Hence, instead of passing word indizes to the BiLSTM-CRF architecture, we pass the final 1024 dimensional embeddings to the architecture.
+The code that is responsible for computing the ELMo embeddings is configured with the following line:
 
-The relevant code looks like:
 ```
 embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
-pickleFile = perpareDataset(datasets, embLookup)
 ```
 
-The `ELMoWordEmbeddings` provides methods for the efficient compuation of ELMo representations. It has the following parameters:
+The `ELMoWordEmbeddings`-class provides methods for the efficient computation of ELMo representations. It has the following parameters:
 * `embeddings_file`: The ELMo paper concatenates traditional word embeddings, like GloVe, with the context dependent embeddings. With `embeddings_file` you can pass a path to a pre-trained word embeddings file. You can set it to `none` if you don't want to use traditional word embeddings.
 * `elmo_options_file` and `elmo_weight_file`: AllenNLP provides different pretrained ELMo models.
 * `elmo_mode`: Set to `average` if you want all 3 layers to be averaged. Set to `last` if you want to use only the final layer of the ELMo language model.
 * `elmo_cuda_device`: Can be set to the ID of the GPU which should compute the ELMo embeddings. Set to `-1` to run ELMo on the CPU. Using a GPU drastically improves the computational time.
 
-The `perpareDataset` method requires the `embLookup`-object as an argument. It then iterates through all sentences in your dataset, computes the ELMo embeddings, and stores it in a pickle-file in the `pkl/` folder.
+
+# Caching of ELMo representations
+The computation of ELMo representations is computationally expensive. A CNN is used to map the characters of a token to a dense vectors. These dense vectors are then fed through two BiLSTMs. The representation of each token and the two outputs of the BiLSTMs are used to form the final context-dependent word embedding.
+
+In order speed-up the training, the context dependent word embeddings can be cached. Then, those embeddings must only be computed for the first epoch. For consecutive epochs, the embeddings are used from the cache.
+
+
+To enable the caching, you must add the following line:
+```
+embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
+#...
+embLookup.cache_computed_elmo_embeddings = True
+```
+
+This method requires about 12 KB memory per token. For large datasets, you will need a few gigabyte of RAM.
+
 
 ## Pre-compute ELMo embeddings once
-The `ELMoWordEmbeddings` class implements a caching mechansim for a quick lookup of sentences => context dependent word representations for all tokens in the sentence.
+The `ELMoWordEmbeddings` class implements a caching mechanism for a quick lookup of sentences => context dependent word representations for all tokens in the sentence.
 
 You can run `Create_ELMo_Cache.py` to iterate through all you sentences in your dataset and create the ELMo embeddings for those. It stores these embeddings in the file `embeddings/elmo_cache_[DatasetName].pkl`.
 
@@ -144,7 +156,6 @@ Once you create such a cache, you can load those in your experiments:
 ```
 embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
 embLookup.loadCache('embeddings/elmo_cache_conll2000_chunking.pkl')
-pickleFile = perpareDataset(datasets, embLookup)
 ```
 
 If a sentence is in the cache, the cached representations for all tokens in that sentence are used. This requires the computation of the ELMo embeddings for a dataset must only be done once.
