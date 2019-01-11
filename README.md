@@ -20,7 +20,7 @@ The system is **easy to use**, optimized for **high performance**, and highly **
 # Documentation
 For an IPython Notebook with a simple example how to use ELMo representations for sentence classification, see: [Keras_ELMo_Tutorial.ipynb](Keras_ELMo_Tutorial.ipynb).
 
-This code is an extension of the [emnlp2017-bilstm-cnn-crf](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/) implementation. Must examples can be used with only slight adaptation. Also please see that repository for an explanation about the definition of the datasets, the configuration of the hyperparameters, how to use it for multi-task learning, or how to create custom features.
+This code is an extension of the [emnlp2017-bilstm-cnn-crf](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/) implementation. Most examples can be used with only slight adaptation. Also please see that repository for an explanation about the definition of the datasets, the configuration of the hyperparameters, how to use it for multi-task learning, or how to create custom features.
 
 Most aspects from [emnlp2017-bilstm-cnn-crf](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/) work the same in this implementation.
 
@@ -56,7 +56,7 @@ Don't hesitate to send us an e-mail or report an issue, if something is broken (
 # Setup
 In order to run the code, Python 3.6 or higher is required. The code is based on Keras 2.2.0 and as backend I recommend Tensorflow 1.8.0. I cannot ensure that the code works with different versions for Keras / Tensorflow or with different backends for Keras.
 
-### Installation using virtualenv
+### Installation using conda / virtualenv
 To get the ELMo representations, AllenNLP is required. The [AllenNLP installation instructions](https://github.com/allenai/allennlp) describe a nice way how to setup a virtual enviromnent with the correct Python version.
 
 [Conda](https://conda.io/) can be used set up a virtual environment with the version of Python required (3.6).
@@ -117,14 +117,9 @@ datasets = {
 For more details, see the [emnlp2017-bilstm-cnn-crf implementation](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/).
 
 # ELMo Word Representations Computation
-
-The code that is responsible for computing the ELMo embeddings is configured with the following line:
-
-```
-embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
-```
-
 The `ELMoWordEmbeddings`-class provides methods for the efficient computation of ELMo representations. It has the following parameters:
+
+The `ELMoWordEmbeddings` provides methods for the efficient computation of ELMo representations. It has the following parameters:
 * `embeddings_file`: The ELMo paper concatenates traditional word embeddings, like GloVe, with the context dependent embeddings. With `embeddings_file` you can pass a path to a pre-trained word embeddings file. You can set it to `none` if you don't want to use traditional word embeddings.
 * `elmo_options_file` and `elmo_weight_file`: AllenNLP provides different pretrained ELMo models.
 * `elmo_mode`: Set to `average` if you want all 3 layers to be averaged. Set to `last` if you want to use only the final layer of the ELMo language model.
@@ -137,7 +132,7 @@ The computation of ELMo representations is computationally expensive. A CNN is u
 In order speed-up the training, the context dependent word embeddings can be cached. Then, those embeddings must only be computed for the first epoch. For consecutive epochs, the embeddings are used from the cache.
 
 
-To enable the caching, you must add the following line:
+To enable the caching, you must set `embLookup.cache_computed_elmo_embeddings` to True:
 ```
 embLookup = ELMoWordEmbeddings(embeddings_file, elmo_options_file, elmo_weight_file, elmo_mode, elmo_cuda_device)
 #...
