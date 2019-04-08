@@ -25,20 +25,16 @@ This code is an extension of the [emnlp2017-bilstm-cnn-crf](https://github.com/U
 Most aspects from [emnlp2017-bilstm-cnn-crf](https://github.com/UKPLab/emnlp2017-bilstm-cnn-crf/) work the same in this implementation.
 
 # Citation
-This repository contains experimental software and is under active development. I working on the create of additional material to explain the usage of ELMo representations in state-of-the-art classifier.
-
-Until then, if you find the implementation useful, please cite the following paper: [Reporting Score Distributions Makes a Difference: Performance Study of LSTM-networks for Sequence Tagging](https://arxiv.org/abs/1707.09861)
+This repository contains experimental software and is under active development. If you find the implementation useful, please cite the following paper: [Alternative Weighting Schemes for ELMo Embedding](https://arxiv.org/abs/1904.02954)
 
 ```
-@InProceedings{Reimers:2017:EMNLP,
+@article{Reimers:2019,
   author    = {Reimers, Nils, and Gurevych, Iryna},
-  title     = {{Reporting Score Distributions Makes a Difference: Performance Study of LSTM-networks for Sequence Tagging}},
-  booktitle = {Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
-  month     = {09},
-  year      = {2017},
-  address   = {Copenhagen, Denmark},
-  pages     = {338--348},
-  url       = {http://aclweb.org/anthology/D17-1035}
+  title     = {{Alternative Weighting Schemes for ELMo Embeddings}},
+  journal   = {CoRR},
+  volume    = {abs/1904.02954},
+  year      = {2019},
+  url       = {https://arxiv.org/abs/1904.02954}
 }
 ```
 
