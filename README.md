@@ -47,7 +47,19 @@ https://www.ukp.tu-darmstadt.de/ https://www.tu-darmstadt.de/
 
 Don't hesitate to send us an e-mail or report an issue, if something is broken (and it shouldn't be) or if you have further questions.
 
+# First two layer of the ELMo Model  
+In my publication *[Alternative Weighting Schemes for ELMo Embedding](https://arxiv.org/abs/1904.02954)*, I show that it is often sufficient to use only the first to layers of ELMo. The third layers led for various tasks to no significant improvement. Reducing the ELMo model from three to two layers increases the training speed up to 50%.
 
+You can download the reduced, pre-trained models from here:
+
+* **Original-Model**
+  * **options_file**: [https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original/elmo_2x4096_512_2048cnn_2xhighway_options_first_two_layers.json](https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original/elmo_2x4096_512_2048cnn_2xhighway_options_first_two_layers.json)
+  * **weight_file**: [https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original/elmo_2x4096_512_2048cnn_2xhighway_weights_first_two_layers.hdf5](https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original/elmo_2x4096_512_2048cnn_2xhighway_weights_first_two_layers.hdf5)
+* **Original-Model (5.5B)**
+  * **options_file**: [https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original_5.5B/elmo_2x4096_512_2048cnn_2xhighway_options_first_two_layers.json](https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original/elmo_2x4096_512_2048cnn_2xhighway_options_first_two_layers.json)
+  * **weight_file**: [https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original_5.5B/elmo_2x4096_512_2048cnn_2xhighway_weights_first_two_layers.hdf5](https://public.ukp.informatik.tu-darmstadt.de/reimers/2019_elmo_weights/Original/elmo_2x4096_512_2048cnn_2xhighway_weights_first_two_layers.hdf5)
+
+This reduced ELMo model is also compatible with the models from [AllenNLP](https://github.com/allenai/allennlp/), just replace the *options_file* / *weight_file* in your config with the provided URLs. 
 
 # Setup
 In order to run the code, Python 3.6 or higher is required. The code is based on Keras 2.2.0 and as backend I recommend Tensorflow 1.8.0. I cannot ensure that the code works with different versions for Keras / Tensorflow or with different backends for Keras.
