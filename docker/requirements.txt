@@ -6,7 +6,7 @@ atomicwrites==1.1.5
 attrs==18.1.0
 awscli==1.15.41
 Babel==2.6.0
-bleach==1.5.0
+bleach==3.3.0
 botocore==1.10.41
 cffi==1.11.2
 chardet==3.0.4
