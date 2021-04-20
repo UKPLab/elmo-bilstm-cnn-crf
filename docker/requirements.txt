@@ -51,7 +51,7 @@ pluggy==0.6.0
 preshed==1.0.0
 protobuf==3.5.2.post1
 psycopg2==2.7.5
-py==1.5.3
+py==1.10.0
 pyasn1==0.4.3
 pycparser==2.18
 Pygments==2.2.0
