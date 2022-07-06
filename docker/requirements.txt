@@ -27,7 +27,7 @@ gevent==1.2.2
 greenlet==0.4.13
 grpcio==1.11.0
 h5py==2.7.1
-html5lib==0.9999999
+html5lib==0.999999999
 idna==2.7
 imagesize==1.0.0
 itsdangerous==0.24
