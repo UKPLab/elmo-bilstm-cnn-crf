@@ -49,7 +49,7 @@ pathlib==1.0.1
 plac==0.9.6
 pluggy==0.6.0
 preshed==1.0.0
-protobuf==3.5.2.post1
+protobuf==3.18.3
 psycopg2==2.7.5
 py==1.5.3
 pyasn1==0.4.3
